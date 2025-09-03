@@ -87,7 +87,7 @@ class FinishedRequestStats:
 class IterationStats:
     """Stats associated with a single set of EngineCoreOutputs."""
 
-    def __init__(self, prefill_tps_hist: Optional[Deque] = None):
+    def __init__(self, prefill_tps_history: Optional[Deque] = None):
         self.iteration_timestamp = time.time()
         self.num_generation_tokens = 0
         self.num_prompt_tokens = 0
@@ -99,7 +99,7 @@ class IterationStats:
         self.inter_token_latencies_iter: list[float] = []
         self.waiting_lora_adapters: dict[str, int] = {}
         self.running_lora_adapters: dict[str, int] = {}
-        self.prefill_tps_hist = prefill_tps_hist
+        self.prefill_tps_history = prefill_tps_history
 
     def _time_since(self, start: float) -> float:
         """Calculate an interval relative to this iteration's timestamp."""
@@ -176,9 +176,9 @@ class IterationStats:
 
         computed_prefill_tokens = num_prompt_tokens - num_cached_tokens
 
-        if (self.prefill_tps_hist is not None and
+        if (self.prefill_tps_history is not None and
                 prefill_time > 0 and computed_prefill_tokens > 0):
-            self.prefill_tps_hist.append(computed_prefill_tokens / prefill_time)
+            self.prefill_tps_history.append(computed_prefill_tokens / prefill_time)
 
         finished_req = \
             FinishedRequestStats(finish_reason=finish_reason,
@@ -193,9 +193,9 @@ class IterationStats:
         self.finished_requests.append(finished_req)
 
     def get_avg_prefill_tps(self):
-        if not self.prefill_tps_hist:
+        if not self.prefill_tps_history:
             return -1.0
-        return sum(self.prefill_tps_hist) / len(self.prefill_tps_hist)
+        return sum(self.prefill_tps_history) / len(self.prefill_tps_history)
 
 
 class LoRARequestStates:
