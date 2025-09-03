@@ -451,6 +451,16 @@ class PrometheusStatLogger(StatLoggerBase):
         self.histogram_decode_time_request = make_per_engine(
             histogram_decode_time_request, engine_indexes, model_name)
 
+        # Average tokens per seconds of requests in prefill
+        gauge_avg_prefill_tps = self._gauge_cls(
+            name="vllm:avg_prefill_tps",
+            documentation="Avg. TPS of computed prefill tokens of the 100 most "
+                          "recent finished requests.",
+            labelnames=labelnames)
+        self.gauge_avg_prefill_tps = make_per_engine(gauge_avg_prefill_tps,
+                                                     engine_indexes,
+                                                     model_name)
+
         #
         # LoRA metrics
         #
@@ -576,6 +586,9 @@ class PrometheusStatLogger(StatLoggerBase):
             if finished_request.max_tokens_param:
                 self.histogram_max_tokens_request[engine_idx].observe(
                     finished_request.max_tokens_param)
+
+        self.gauge_avg_prefill_tps[engine_idx].set(
+            iteration_stats.get_avg_prefill_tps())
 
         if self.gauge_lora_info is not None:
             running_lora_adapters = \
